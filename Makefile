@@ -14,7 +14,6 @@ test-match:
 	make test args="-run $(case)"
 
 test-ci:
-	set -euo pipefail
 	go test -json -skip /pkg/test -v ./... 2>&1 | gotestfmt
 
 clean:
