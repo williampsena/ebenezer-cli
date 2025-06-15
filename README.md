@@ -16,6 +16,8 @@ The theme is named Ebenezer 🪨, meaning "stone of help." The name originates f
 
 Your feedback and contributions are highly encouraged as we work to refine and improve the project! 🙌
 
+![waybar](./images/waybar.png)
+
 # How to Run
 
 ## Locally
