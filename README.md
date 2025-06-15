@@ -38,8 +38,8 @@ ebenezer-cli widgets logo --format waybar
 
 ```json
 {
-    "modules-center": [
-        "hyprland/window"
+    "modules-left": [
+        "custom/ebenezer-logo",
     ],
     "modules-right": [
         "custom/ebenezer-cpu",
