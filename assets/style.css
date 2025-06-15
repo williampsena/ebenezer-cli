@@ -1,0 +1,38 @@
+#custom-ebenezer-cpu,
+#custom-ebenezer-memory,
+#custom-ebenezer-temperature {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-left: 4px;
+    margin-right: 4px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+#custom-ebenezer-cpu.low {
+    color: #f8f8f2;
+}
+
+#custom-ebenezer-cpu.medium {
+    color: #f1fa8c;
+}
+
+#custom-ebenezer-cpu.high {
+    color: #ff5555;
+    font-weight: bold;
+}
+
+#custom-ebenezer-logo {
+    padding-left: 10px;
+    padding-right: 5px;
+    color: #bd93f9;
+}
+
+#custom-ebenezer-logo:hover {
+    opacity: 0.8;
+
+}
+
+#custom-ebenezer-logo:active {
+    opacity: 0.6;
+}
