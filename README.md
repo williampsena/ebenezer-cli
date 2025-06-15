@@ -77,3 +77,8 @@ ebenezer-cli widgets logo --format waybar
 ```
 
 To customize widget styles, copy and modify the provided stylesheet (`./assets/style.css`) and save it as `$HOME/.config/waybar/style.css`.
+
+
+# References
+
+- https://github.com/typecraft-dev/dotfiles
