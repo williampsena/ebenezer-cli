@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,7 +14,7 @@ import (
 var distroLogos = map[string]string{
 	"ubuntu":        "",
 	"fedora":        "",
-	"arch-linux":    "",
+	"arch":          "",
 	"debian":        "",
 	"rocky":         "",
 	"red-hat":       "",
@@ -38,10 +39,16 @@ type LogoCmd struct {
 }
 
 func (w *LogoCmd) Run(ctx *cmd.Context) error {
+	w.BuildLogger(ctx.Debug)
+
 	version, err := w.getSystemVersion()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error fetching system version: %v\n", err)
-		version = "Unknown"
+		version, err = w.fallbackGetSystemVersion()
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error fetching system version: %v\n", err)
+			version = "Unknown"
+		}
 	}
 
 	kernelVersion, err := w.getKernelVersion()
@@ -86,6 +93,37 @@ func (w *LogoCmd) Render(ctx *cmd.Context, version, kernelVersion string) (strin
 }
 
 func (w *LogoCmd) getSystemVersion() (string, error) {
+	file, err := os.Open("/etc/os-release")
+
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	var name, version string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "NAME=") {
+			name = strings.Trim(line[5:], "\"")
+		}
+		if strings.HasPrefix(line, "VERSION_ID=") {
+			version = strings.Trim(line[11:], "\"")
+		}
+	}
+	if name == "" {
+		name = "Unknown"
+	}
+
+	if version != "" {
+		return fmt.Sprintf("%s %s", name, version), nil
+	}
+
+	return name, nil
+}
+
+func (w *LogoCmd) fallbackGetSystemVersion() (string, error) {
 	output, err := exec.Command("lsb_release", "-d").Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to execute lsb_release: %v", err)

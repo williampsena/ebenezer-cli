@@ -10,6 +10,8 @@ import (
 func main() {
 	cli := cmd.CLI{}
 	ctx := kong.Parse(&cli)
-	err := ctx.Run(&internalcmd.Context{})
+	err := ctx.Run(&internalcmd.Context{
+		Debug: cli.Debug,
+	})
 	ctx.FatalIfErrorf(err)
 }

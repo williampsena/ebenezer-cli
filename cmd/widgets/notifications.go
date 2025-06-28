@@ -23,6 +23,8 @@ type NotificationsCmd struct {
 }
 
 func (w *NotificationsCmd) Run(ctx *cmd.Context) error {
+	w.BuildLogger(ctx.Debug)
+
 	for {
 		count, err := getUnseenNotificationsCount(w.Provider)
 		if err != nil {

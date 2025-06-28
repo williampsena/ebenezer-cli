@@ -20,6 +20,12 @@ Your feedback and contributions are highly encouraged as we work to refine and i
 
 # How to Run
 
+# Dependencies
+
+```
+go install github.com/gotesttools/gotestfmt/v2/cmd/gotestfmt@latest
+```
+
 ## Locally
 ```shell
 make run opts="widgets cpu --icon-color \#fffff"

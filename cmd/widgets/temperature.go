@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/host"
+	"github.com/williampsena/ebenezer-cli/internal/cmd"
 	formatters "github.com/williampsena/ebenezer-cli/internal/cmd/formatters"
 )
 
@@ -19,7 +20,9 @@ type TemperatureCmd struct {
 	ThresholdMedium float64 `help:"Temperature threshold for high usage in degrees Celsius." default:"60"`
 }
 
-func (w *TemperatureCmd) Run() error {
+func (w *TemperatureCmd) Run(ctx *cmd.Context) error {
+	w.BuildLogger(ctx.Debug)
+
 	for {
 		temps, err := host.SensorsTemperatures()
 		if err != nil {

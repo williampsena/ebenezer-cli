@@ -2,7 +2,6 @@ package widgets
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -20,10 +19,13 @@ type CpuCmd struct {
 }
 
 func (w *CpuCmd) Run(ctx *cmd.Context) error {
+	w.BuildLogger(ctx.Debug)
+
 	for {
 		percentages, err := cpu.Percent(500*time.Millisecond, false)
 		if err != nil {
-			log.Fatalf("Error fetching CPU usage: %v\n", err)
+			w.logger.Error("Error fetching CPU usage", "err", err)
+			return nil
 		}
 
 		usage := percentages[0]
