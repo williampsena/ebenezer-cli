@@ -7,6 +7,7 @@ import (
 
 type CLI struct {
 	Debug    bool                   `help:"Enable debug mode."`
+	Silent   bool                   `help:"Enable silent mode."`
 	Widgets  widgets.WidgetGroup    `cmd:"" help:"Waybar commands (JSON mode)"`
 	Hyprland hyprland.HyprlandGroup `cmd:"" help:"Hyprland commands"`
 }

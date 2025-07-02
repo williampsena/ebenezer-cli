@@ -39,7 +39,7 @@ type LogoCmd struct {
 }
 
 func (w *LogoCmd) Run(ctx *cmd.Context) error {
-	w.BuildLogger(ctx.Debug)
+	w.SetupContext(ctx.Debug)
 
 	version, err := w.getSystemVersion()
 	if err != nil {

@@ -25,7 +25,7 @@ type HyprlockCmd struct {
 }
 
 func (w *HyprlockCmd) Run(ctx *cmd.Context) error {
-	w.BuildLogger(ctx.Debug)
+	w.SetupContext(ctx)
 
 	w.ConfigPath = os.ExpandEnv(w.ConfigPath)
 

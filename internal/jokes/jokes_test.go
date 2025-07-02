@@ -31,7 +31,7 @@ func (e *mockError) Error() string {
 }
 
 func TestBuildJokeFetcher(t *testing.T) {
-	logger := &core.Logger{}
+	logger := core.BuildSilentLogger()
 	provider := "reddit"
 	useCache := true
 
@@ -65,7 +65,7 @@ func TestJokeFetcher(t *testing.T) {
 
 			defer delete(PROVIDERS, "mock")
 
-			logger := &core.Logger{}
+			logger := core.BuildSilentLogger()
 			fetcher := BuildJokeFetcher(logger, "mock", true)
 
 			joke, err := fetcher.FetchJokes()
@@ -80,7 +80,7 @@ func TestJokeFetcher(t *testing.T) {
 		})
 
 		t.Run("Invalid Provider", func(t *testing.T) {
-			logger := &core.Logger{}
+			logger := core.BuildSilentLogger()
 			fetcher := BuildJokeFetcher(logger, "nonexistent", true)
 
 			joke, err := fetcher.FetchJokes()
@@ -108,7 +108,7 @@ func TestJokeFetcher(t *testing.T) {
 
 			defer delete(PROVIDERS, "mock_error")
 
-			logger := &core.Logger{}
+			logger := core.BuildSilentLogger()
 			fetcher := BuildJokeFetcher(logger, "mock_error", true)
 
 			joke, err := fetcher.FetchJokes()
@@ -219,7 +219,7 @@ func TestApplyFormat(t *testing.T) {
 }
 
 func TestJokeProvider_Initialize(t *testing.T) {
-	logger := &core.Logger{}
+	logger := core.BuildSilentLogger()
 	settings := &JokeFetcherSettings{
 		logger:   logger,
 		provider: "test",
@@ -262,7 +262,7 @@ func TestPROVIDERS_ContainsExpectedProviders(t *testing.T) {
 			}
 		}()
 
-		logger := &core.Logger{}
+		logger := core.BuildSilentLogger()
 		settings := &JokeFetcherSettings{
 			logger:   logger,
 			provider: name,
@@ -280,7 +280,7 @@ func TestCacheDuration(t *testing.T) {
 }
 
 func TestJokeFetcherSettings_FieldsAccessibility(t *testing.T) {
-	logger := &core.Logger{}
+	logger := core.BuildSilentLogger()
 	settings := JokeFetcherSettings{
 		logger:   logger,
 		provider: "test-provider",

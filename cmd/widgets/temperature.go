@@ -21,7 +21,7 @@ type TemperatureCmd struct {
 }
 
 func (w *TemperatureCmd) Run(ctx *cmd.Context) error {
-	w.BuildLogger(ctx.Debug)
+	w.SetupContext(ctx.Debug)
 
 	for {
 		temps, err := host.SensorsTemperatures()

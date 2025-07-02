@@ -14,7 +14,7 @@ import (
 
 func TestIcanhazjoke(t *testing.T) {
 	t.Run("Initialize", func(t *testing.T) {
-		logger := &core.Logger{}
+		logger := core.BuildSilentLogger()
 		settings := &JokeFetcherSettings{
 			logger:   logger,
 			provider: "icanhazdadjoke",
@@ -216,7 +216,7 @@ func TestIcanhazjoke(t *testing.T) {
 			}
 			defer os.Remove(icanhazjokeCacheFilePath)
 
-			logger := &core.Logger{}
+			logger := core.BuildSilentLogger()
 			joke := &icanhazjoke{}
 			joke.Initialize(&JokeFetcherSettings{
 				logger:   logger,
@@ -253,7 +253,7 @@ func TestIcanhazjoke(t *testing.T) {
 			}))
 			defer server.Close()
 
-			logger := &core.Logger{}
+			logger := core.BuildSilentLogger()
 			joke := &icanhazjoke{}
 			joke.Initialize(&JokeFetcherSettings{
 				logger:   logger,
@@ -274,7 +274,7 @@ func TestIcanhazjoke(t *testing.T) {
 		t.Run("FromHTTP_Error", func(t *testing.T) {
 			defer os.Remove(icanhazjokeCacheFilePath)
 
-			logger := &core.Logger{}
+			logger := core.BuildSilentLogger()
 			joke := &icanhazjoke{}
 			joke.Initialize(&JokeFetcherSettings{
 				logger:   logger,
@@ -307,7 +307,7 @@ func TestIcanhazjoke(t *testing.T) {
 		}))
 		defer server.Close()
 
-		logger := &core.Logger{}
+		logger := core.BuildSilentLogger()
 		joke := &icanhazjoke{}
 		joke.Initialize(&JokeFetcherSettings{
 			logger:   logger,
@@ -379,7 +379,7 @@ func TestIcanhazjoke(t *testing.T) {
 
 		defer os.Remove(icanhazjokeCacheFilePath)
 
-		logger := &core.Logger{}
+		logger := core.BuildSilentLogger()
 		joke := &icanhazjoke{}
 		joke.Initialize(&JokeFetcherSettings{
 			logger:   logger,

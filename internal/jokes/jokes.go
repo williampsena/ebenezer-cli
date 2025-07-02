@@ -33,12 +33,12 @@ type JokeFetcher struct {
 }
 
 type JokeFetcherSettings struct {
-	logger   *core.Logger
+	logger   core.Logger
 	provider string
 	useCache bool
 }
 
-func BuildJokeFetcher(logger *core.Logger, provider string, useCache bool) JokeFetcher {
+func BuildJokeFetcher(logger core.Logger, provider string, useCache bool) JokeFetcher {
 	return JokeFetcher{
 		settings: &JokeFetcherSettings{
 			logger:   logger,

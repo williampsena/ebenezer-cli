@@ -1,5 +1,6 @@
 package cmd
 
 type Context struct {
-	Debug bool
+	Debug  bool
+	Silent bool
 }

@@ -23,7 +23,7 @@ type NotificationsCmd struct {
 }
 
 func (w *NotificationsCmd) Run(ctx *cmd.Context) error {
-	w.BuildLogger(ctx.Debug)
+	w.SetupContext(ctx.Debug)
 
 	for {
 		count, err := getUnseenNotificationsCount(w.Provider)
@@ -53,7 +53,7 @@ func (w *NotificationsCmd) Render(ctx *cmd.Context, count int) (string, error) {
 	data := map[string]interface{}{
 		"icon":       w.getIcon(count),
 		"icon-color": w.IconColor,
-		"text":       fmt.Sprintf("%d", count),
+		"text":       w.renderText(count),
 		"tooltip":    fmt.Sprintf("Unseen notifications: %d", count),
 		"class":      "normal",
 		"color":      "#ffffff",
@@ -70,6 +70,14 @@ func (w *NotificationsCmd) getIcon(count int) string {
 	}
 }
 
+func (w *NotificationsCmd) renderText(count int) string {
+	if count == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("%d", count)
+}
+
 func (w *NotificationsCmd) buildAnimatedBellIcon() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	randomNum := r.Intn(len(bells))
@@ -81,12 +89,13 @@ func getUnseenNotificationsCount(provider string) (int, error) {
 	var count int
 	var err error
 
-	if provider == "dunst" {
+	switch provider {
+	case "dunst":
 		count, err := dunstCount()
 		if err == nil {
 			return count, nil
 		}
-	} else if provider == "swaync" {
+	case "swaync":
 		count, err = swayncCount()
 		if err == nil {
 			return count, nil

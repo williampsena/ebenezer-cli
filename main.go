@@ -11,7 +11,8 @@ func main() {
 	cli := cmd.CLI{}
 	ctx := kong.Parse(&cli)
 	err := ctx.Run(&internalcmd.Context{
-		Debug: cli.Debug,
+		Debug:  cli.Debug,
+		Silent: cli.Silent,
 	})
 	ctx.FatalIfErrorf(err)
 }

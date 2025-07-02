@@ -8,6 +8,7 @@ run:
 	go run ./main.go $(opts)
 
 test:
+	export GO_ENV=test
 	go test -json -skip /pkg/test -v ./... $(args) 2>&1 | gotestfmt
 
 test-match:

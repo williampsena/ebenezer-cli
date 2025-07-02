@@ -19,7 +19,7 @@ type CpuCmd struct {
 }
 
 func (w *CpuCmd) Run(ctx *cmd.Context) error {
-	w.BuildLogger(ctx.Debug)
+	w.SetupContext(ctx.Debug)
 
 	for {
 		percentages, err := cpu.Percent(500*time.Millisecond, false)

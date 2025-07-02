@@ -19,7 +19,7 @@ type MemoryCmd struct {
 }
 
 func (w *MemoryCmd) Run(ctx *cmd.Context) error {
-	w.BuildLogger(ctx.Debug)
+	w.SetupContext(ctx.Debug)
 
 	for {
 		vm, err := mem.VirtualMemory()
