@@ -2,23 +2,28 @@ package hyprland
 
 import (
 	"fmt"
-	"io/fs"
-	"math/rand"
+	"html/template"
 	"os"
-	"path/filepath"
 	"strings"
-	"time"
 
 	cmd "github.com/williampsena/ebenezer-cli/internal/cmd"
 	core "github.com/williampsena/ebenezer-cli/internal/core"
+	hyprland "github.com/williampsena/ebenezer-cli/internal/hyprland"
+	"github.com/williampsena/ebenezer-cli/internal/shell"
 )
+
+var SCRIPT_CHANGE_WALLPAPER = `
+hyprctl hyprpaper unload all
+hyprctl hyprpaper preload "{{.Image}}"
+hyprctl hyprpaper wallpaper "{{.Monitor}},{{.Image}}"
+`
 
 type HyprpaperCmd struct {
 	HyprlandCmd
-	MonitorName string `arg:"" help:"Monitor name to set the wallpaper on" default:"eDP-1"`
-	Interval    int    `help:"Interval in seconds for wallpaper slideshow" default:"30"`
-	Slideshow   bool   `help:"Enable wallpaper slideshow" default:"false"`
+	hyprpaper   *hyprland.Hyprpaper
+	MonitorName string `arg:"" help:"Monitor name to set the wallpaper on" default:""`
 	Path        string `help:"Path to a specific wallpaper file or directory" default:"~/Pictures/Wallpapers/Active"`
+	Startup     bool   `help:"Run hyprpaper on startup" default:"false"`
 }
 
 const (
@@ -26,25 +31,78 @@ const (
 )
 
 func (h *HyprpaperCmd) Run(ctx *cmd.Context) error {
+	h.SetupContext(ctx)
+	h.hyprpaper = hyprland.NewHyprpaper(h.Logger, h.Shell)
+
+	if err := h.setMonitorName(); err != nil {
+		h.Logger.Error("Error setting monitor name", "error", err)
+		return err
+	}
+
 	wallpaperPath := core.ResolvePath(h.Path)
 	configPath := core.ResolvePath(configFile)
 
+	if h.Startup {
+		return h.RunStartup(wallpaperPath, configPath)
+	}
+
+	return h.RunSetWallpaper(wallpaperPath, configPath)
+}
+
+func (h *HyprpaperCmd) RunStartup(wallpaperPath string, configPath string) error {
 	configFile, err := h.buildConfig(configPath, wallpaperPath)
 
 	if err != nil {
-		h.logger.Error("Error building configuration file", "error", err)
+		h.Logger.Error("Error building configuration file", "error", err)
 		return err
 	}
 
 	defer configFile.Close()
 
-	if h.Slideshow {
-		h.setupSlideshow(wallpaperPath, configFile)
+	if isDirectory := h.isDirectory(wallpaperPath); isDirectory {
+		h.setupRandomWallpaper(wallpaperPath, configFile)
 	} else {
 		h.setupSingleWallpaper(wallpaperPath, configFile)
 	}
 
-	h.logger.Info("Hyprpaper configuration file created successfully", "path", configPath)
+	h.Logger.Info("Hyprpaper configuration file created successfully", "path", configPath)
+
+	return nil
+}
+
+func (h *HyprpaperCmd) RunSetWallpaper(wallpaperPath string, configPath string) error {
+	imageFiles, err := h.hyprpaper.FetchRandomImages(wallpaperPath)
+	if err != nil {
+		return err
+	}
+	selectedImage := imageFiles[0]
+
+	tmpl, err := template.New("wallpaperScript").Parse(SCRIPT_CHANGE_WALLPAPER)
+	if err != nil {
+		h.Logger.Error("Error parsing template", "error", err)
+		return err
+	}
+
+	var scriptBuilder strings.Builder
+	err = tmpl.Execute(&scriptBuilder, map[string]string{
+		"Image":   selectedImage,
+		"Monitor": h.MonitorName,
+	})
+	if err != nil {
+		h.Logger.Error("Error executing template", "error", err)
+		return err
+	}
+	script := scriptBuilder.String()
+
+	_, err = h.Shell.Run(shell.RunnerExecutionArgs{
+		Command: "bash",
+		Args:    []string{"-c", script},
+	})
+
+	if err != nil {
+		h.Logger.Error("Error setting wallpaper", "error", err)
+		return err
+	}
 
 	return nil
 }
@@ -52,116 +110,84 @@ func (h *HyprpaperCmd) Run(ctx *cmd.Context) error {
 func (h *HyprpaperCmd) buildConfig(configPath, wallpaperPath string) (*os.File, error) {
 	file, err := os.Create(configPath)
 	if err != nil {
-		h.logger.Error("Error creating config file", "error", err)
+		h.Logger.Error("Error creating config file", "error", err)
 		return nil, err
 	}
 
 	_, err = fmt.Fprintf(file, "# Hyprpaper configuration file\n")
 	if err != nil {
-		h.logger.Error("Error writing to config file", "error", err)
-		return nil, err
-	}
-
-	_, err = fmt.Fprintf(file, "wallpaper_dir = %s\n", wallpaperPath)
-	if err != nil {
-		h.logger.Error("Error writing wallpaper directory", "error", err)
+		h.Logger.Error("Error writing to config file", "error", err)
 		return nil, err
 	}
 
 	return file, nil
 }
 
-func (h *HyprpaperCmd) findImageFiles(dir string) ([]string, error) {
-	var imageFiles []string
-	extensions := []string{".jpg", ".jpeg", ".png"}
-
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return nil
-		}
-
-		ext := strings.ToLower(filepath.Ext(path))
-		for _, validExt := range extensions {
-			if ext == validExt {
-				imageFiles = append(imageFiles, path)
-				break
-			}
-		}
-
-		return nil
-	})
-
-	return imageFiles, err
-}
-
-func (h *HyprpaperCmd) setupPreload(file *os.File, imageFiles []string) error {
-	for _, img := range imageFiles {
-		_, err := fmt.Fprintf(file, "preload = %s\n", img)
-		if err != nil {
-			h.logger.Error("Error writing preload image", "error", err)
-			return err
-		}
+func (h *HyprpaperCmd) setupPreloadImage(file *os.File, imageFile string) error {
+	_, err := fmt.Fprintf(file, "preload = %s\n", imageFile)
+	if err != nil {
+		h.Logger.Error("Error writing preload image", "error", err)
+		return err
 	}
 
 	return nil
 }
 
-func (h *HyprpaperCmd) randomizeImages(imageFiles []string) {
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	rnd.Shuffle(len(imageFiles), func(i, j int) {
-		imageFiles[i], imageFiles[j] = imageFiles[j], imageFiles[i]
-	})
-}
-
-func (h *HyprpaperCmd) setupSlideshow(wallpaperPath string, configFile *os.File) error {
-	imageFiles, err := h.findImageFiles(wallpaperPath)
+func (h *HyprpaperCmd) setupRandomWallpaper(wallpaperPath string, configFile *os.File) error {
+	imageFiles, err := h.hyprpaper.FetchRandomImages(wallpaperPath)
 	if err != nil {
-		h.logger.Error("Error finding image files", "error", err)
 		return err
 	}
 
-	h.randomizeImages(imageFiles)
-	h.setupPreload(configFile, imageFiles)
+	selectedImage := imageFiles[0]
 
-	if len(imageFiles) == 0 {
-		h.logger.Error("No image files found in the specified directory", "path", wallpaperPath)
-		return fmt.Errorf("no image files found in %s", wallpaperPath)
-	}
+	h.setupPreloadImage(configFile, selectedImage)
 
-	firstImg := imageFiles[0]
-	_, err = fmt.Fprintf(configFile, "wallpaper = %s,%s\n", h.MonitorName, firstImg)
+	_, err = fmt.Fprintf(configFile, "wallpaper = %s,%s\n", h.MonitorName, selectedImage)
 	if err != nil {
 		fmt.Printf("Erro ao escrever wallpaper: %v\n", err)
 		os.Exit(1)
-	}
-
-	_, err = fmt.Fprintf(configFile, "slideshow = true\n")
-	if err != nil {
-		h.logger.Error("Error writing slideshow option", "error", err)
-		return err
-	}
-
-	_, err = fmt.Fprintf(configFile, "%s", fmt.Sprintf("slideshow_interval = %d\n", h.Interval))
-	if err != nil {
-		h.logger.Error("Error writing slideshow interval", "error", err)
-		return err
 	}
 
 	return nil
 }
 
 func (h *HyprpaperCmd) setupSingleWallpaper(wallpaperPath string, configFile *os.File) error {
-	h.setupPreload(configFile, []string{wallpaperPath})
+	h.setupPreloadImage(configFile, wallpaperPath)
 
 	_, err := fmt.Fprintf(configFile, "wallpaper = %s,%s\n", h.MonitorName, wallpaperPath)
 	if err != nil {
-		h.logger.Error("Error writing wallpaper option", "error", err)
+		h.Logger.Error("Error writing wallpaper option", "error", err)
 		return err
 	}
 
 	return nil
+}
+
+func (h *HyprpaperCmd) setMonitorName() error {
+	if h.MonitorName != "" {
+		h.Logger.Debug("Using provided monitor name", "name", h.MonitorName)
+		return nil
+	}
+
+	monitorName, err := h.hyprpaper.GetMonitorName()
+
+	if err != nil {
+		h.Logger.Error("Error getting current monitor", "error", err)
+		return fmt.Errorf("failed to get current monitor: %w", err)
+	}
+
+	h.Logger.Debug("Current monitor", "name", monitorName)
+
+	h.MonitorName = monitorName
+	return nil
+}
+
+func (h *HyprpaperCmd) isDirectory(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		h.Logger.Error("Error checking if path is a directory", "path", path, "error", err)
+		return false
+	}
+	return info.IsDir()
 }

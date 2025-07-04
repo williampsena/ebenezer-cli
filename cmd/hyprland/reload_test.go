@@ -231,14 +231,14 @@ func TestReloadCmd_BuildLogger(t *testing.T) {
 
 	t.Run("Build logger with debug disabled", func(t *testing.T) {
 		cmd.SetupContext(&internalcmd.Context{Debug: false})
-		if cmd.logger == nil {
+		if cmd.Logger == nil {
 			t.Error("Logger should not be nil after SetupContext")
 		}
 	})
 
 	t.Run("Build logger with debug enabled", func(t *testing.T) {
 		cmd.SetupContext(&internalcmd.Context{Debug: false})
-		if cmd.logger == nil {
+		if cmd.Logger == nil {
 			t.Error("Logger should not be nil after SetupContext")
 		}
 	})

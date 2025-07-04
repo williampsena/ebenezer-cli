@@ -31,7 +31,7 @@ func (w *HyprlockCmd) Run(ctx *cmd.Context) error {
 
 	data, err := os.ReadFile(w.ConfigPath)
 	if err != nil {
-		w.logger.Error("Error reading hyprlock.conf", "err", err)
+		w.Logger.Error("Error reading hyprlock.conf", "err", err)
 		return fmt.Errorf("error while trying to read file hyprlock.conf: %v", err)
 	}
 
@@ -41,11 +41,11 @@ func (w *HyprlockCmd) Run(ctx *cmd.Context) error {
 
 	message, err := w.getMessage()
 	if err != nil {
-		w.logger.Error("Error getting message for hyprlock", "err", err)
+		w.Logger.Error("Error getting message for hyprlock", "err", err)
 		return err
 	}
 
-	w.logger.Debug("Raw message for hyprlock: %s", message)
+	w.Logger.Debug("Raw message for hyprlock: %s", message)
 	message = jokes.ParseJokeHtml(message)
 
 	if w.Format != "" {
@@ -53,7 +53,7 @@ func (w *HyprlockCmd) Run(ctx *cmd.Context) error {
 	}
 
 	if w.Dry {
-		w.logger.Debug("Dry run mode enabled, not writing changes to hyprlock.conf")
+		w.Logger.Debug("Dry run mode enabled, not writing changes to hyprlock.conf")
 		return nil
 	}
 
@@ -61,7 +61,7 @@ func (w *HyprlockCmd) Run(ctx *cmd.Context) error {
 
 	err = os.WriteFile(w.ConfigPath, []byte(updated), 0644)
 	if err != nil {
-		w.logger.Error("Error writing hyprlock.conf", "err", err)
+		w.Logger.Error("Error writing hyprlock.conf", "err", err)
 		return err
 	}
 
@@ -78,7 +78,7 @@ func (w *HyprlockCmd) getMessage() (string, error) {
 		provider := w.getProvider()
 		joke, err := w.fetchJokes(provider)
 		if err != nil {
-			w.logger.Error("Error fetching joke from %s:", provider, err)
+			w.Logger.Error("Error fetching joke from %s:", provider, err)
 			return defaultLockMessage, nil
 		}
 		return joke, nil
@@ -95,14 +95,14 @@ func (w *HyprlockCmd) fetchJokes(provider string) (string, error) {
 	var joke string
 	var err error
 	for i := 0; i < 3; i++ {
-		fetcher := jokes.BuildJokeFetcher(w.logger, provider, !w.Startup)
+		fetcher := jokes.BuildJokeFetcher(w.Logger, provider, !w.Startup)
 		joke, err = fetcher.FetchJokes()
 		if err == nil {
-			w.logger.Debug("Fetched joke from %s: %s", provider, joke)
+			w.Logger.Debug("Fetched joke from %s: %s", provider, joke)
 			return joke, nil
 		}
 
-		w.logger.Debug("error while trying to fetched joke from %s: %s", provider, joke)
+		w.Logger.Debug("error while trying to fetched joke from %s: %s", provider, joke)
 
 		time.Sleep(500 * time.Millisecond)
 	}

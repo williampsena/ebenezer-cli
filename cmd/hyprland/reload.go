@@ -23,11 +23,11 @@ func (r *ReloadCmd) Run(ctx *cmd.Context) error {
 	}
 
 	if err := r.checkDependencies(); err != nil {
-		r.logger.Warning("Dependency check failed", "error", err)
+		r.Logger.Warning("Dependency check failed", "error", err)
 		return fmt.Errorf("dependency check failed: %w", err)
 	}
 
-	r.logger.Info("Starting reload process", "component", r.Component)
+	r.Logger.Info("Starting reload process", "component", r.Component)
 
 	switch r.Component {
 	case "all":
@@ -42,45 +42,45 @@ func (r *ReloadCmd) Run(ctx *cmd.Context) error {
 }
 
 func (r *ReloadCmd) reloadAll() error {
-	r.logger.Info("🔄 Reloading all components")
+	r.Logger.Info("🔄 Reloading all components")
 
 	if err := r.reloadWaybar(); err != nil {
-		r.logger.Warning("Failed to reload waybar", "error", err)
+		r.Logger.Warning("Failed to reload waybar", "error", err)
 	}
 
 	time.Sleep(1 * time.Second)
 
 	if err := r.reloadHyprland(); err != nil {
-		r.logger.Error("❌ Failed to reload hyprland", "error", err)
+		r.Logger.Error("❌ Failed to reload hyprland", "error", err)
 		return err
 	}
 
 	if err := r.performHealthCheck(); err != nil {
-		r.logger.Warning("Health check failed after reload", "error", err)
+		r.Logger.Warning("Health check failed after reload", "error", err)
 		return err
 	}
 
-	r.logger.Info("✅ Successfully reloaded all components")
+	r.Logger.Info("✅ Successfully reloaded all components")
 	return nil
 }
 
 func (r *ReloadCmd) reloadHyprland() error {
-	r.logger.Info("🔄 Reloading 🔳 Hyprland configuration")
+	r.Logger.Info("🔄 Reloading 🔳 Hyprland configuration")
 
-	output, err := r.shell.Run(shell.RunnerExecutionArgs{
+	output, err := r.Shell.Run(shell.RunnerExecutionArgs{
 		Command: "hyprctl",
 		Args:    []string{"reload"},
 	})
 	if err != nil {
-		r.logger.Error("❌ Failed to reload 🔳 Hyprland", "error", err, "output", string(output))
+		r.Logger.Error("❌ Failed to reload 🔳 Hyprland", "error", err, "output", string(output))
 		return fmt.Errorf("failed to reload 🔳 Hyprland: %w", err)
 	}
 
-	r.logger.Info("✅ Hyprland 🔳 configuration reloaded successfully")
+	r.Logger.Info("✅ Hyprland 🔳 configuration reloaded successfully")
 
 	if r.Component == "hyprland" {
 		if err := r.performHealthCheck(); err != nil {
-			r.logger.Warning("🩺 Hyprland 🔳 health check failed", "error", err)
+			r.Logger.Warning("🩺 Hyprland 🔳 health check failed", "error", err)
 			return err
 		}
 	}
@@ -89,19 +89,19 @@ func (r *ReloadCmd) reloadHyprland() error {
 }
 
 func (r *ReloadCmd) reloadWaybar() error {
-	r.logger.Info("🔄 Reloading Waybar ➖")
+	r.Logger.Info("🔄 Reloading Waybar ➖")
 
 	if !r.isProcessRunning("waybar") {
-		r.logger.Info("⏹️ Waybar ➖ is not running, starting it")
+		r.Logger.Info("⏹️ Waybar ➖ is not running, starting it")
 		if err := r.startWaybar(); err != nil {
 			return err
 		}
 	} else {
 		if err := r.killProcess("waybar"); err != nil {
-			r.logger.Warning("Failed to kill Waybar ➖ process", "error", err)
+			r.Logger.Warning("Failed to kill Waybar ➖ process", "error", err)
 		}
 
-		r.logger.Debug("Waiting for Waybar ➖ to terminate", "seconds", r.WaitTime)
+		r.Logger.Debug("Waiting for Waybar ➖ to terminate", "seconds", r.WaitTime)
 		time.Sleep(time.Duration(r.WaitTime) * time.Second)
 
 		if err := r.startWaybar(); err != nil {
@@ -112,7 +112,7 @@ func (r *ReloadCmd) reloadWaybar() error {
 	if r.Component == "waybar" {
 		time.Sleep(1 * time.Second)
 		if err := r.performHealthCheck(); err != nil {
-			r.logger.Warning("Waybar ➖ health check failed", "error", err)
+			r.Logger.Warning("Waybar ➖ health check failed", "error", err)
 			return err
 		}
 	}
@@ -121,32 +121,32 @@ func (r *ReloadCmd) reloadWaybar() error {
 }
 
 func (r *ReloadCmd) isProcessRunning(processName string) bool {
-	return r.processManager.IsProcessRunning(processName)
+	return r.ProcessManager.IsProcessRunning(processName)
 }
 
 func (r *ReloadCmd) killProcess(processName string) error {
-	return r.processManager.KillProcess(processName)
+	return r.ProcessManager.KillProcess(processName)
 }
 
 func (r *ReloadCmd) startWaybar() error {
-	r.logger.Info("🚀 Starting Waybar ➖")
+	r.Logger.Info("🚀 Starting Waybar ➖")
 
-	if exists, _ := r.processManager.BinaryExists("waybar"); !exists {
+	if exists, _ := r.ProcessManager.BinaryExists("waybar"); !exists {
 		return fmt.Errorf("waybar not found in PATH")
 	}
 
-	pid, err := r.shell.Start(shell.RunnerExecutionArgs{
+	pid, err := r.Shell.Start(shell.RunnerExecutionArgs{
 		Command:   "waybar",
 		Setpgid:   true,
 		NilStdout: true,
 		NilStderr: true,
 	})
 	if err != nil {
-		r.logger.Error("❌ Failed to start waybar", "error", err)
+		r.Logger.Error("❌ Failed to start waybar", "error", err)
 		return err
 	}
 
-	r.logger.Info("✅ Waybar ➖ started successfully", "pid", pid)
+	r.Logger.Info("✅ Waybar ➖ started successfully", "pid", pid)
 
 	return nil
 }
@@ -159,7 +159,7 @@ func (r *ReloadCmd) checkDependencies() error {
 	}
 
 	for _, dep := range dependencies {
-		if exists, _ := r.processManager.BinaryExists(dep); !exists {
+		if exists, _ := r.ProcessManager.BinaryExists(dep); !exists {
 			return fmt.Errorf("dependency '%s' not found in PATH", dep)
 		}
 	}
@@ -169,7 +169,7 @@ func (r *ReloadCmd) checkDependencies() error {
 
 func (r *ReloadCmd) validateEnvironment() error {
 	if os.Getenv("HYPRLAND_INSTANCE_SIGNATURE") == "" {
-		r.logger.Warning("HYPRLAND_INSTANCE_SIGNATURE not set, may not be in Hyprland session")
+		r.Logger.Warning("HYPRLAND_INSTANCE_SIGNATURE not set, may not be in Hyprland session")
 	}
 
 	if os.Getenv("WAYLAND_DISPLAY") == "" {
@@ -180,24 +180,24 @@ func (r *ReloadCmd) validateEnvironment() error {
 }
 
 func (r *ReloadCmd) performHealthCheck() error {
-	r.logger.Debug("Performing post-reload health check")
+	r.Logger.Debug("Performing post-reload health check")
 
 	if r.Component == "hyprland" || r.Component == "all" {
-		_, err := r.shell.Run(shell.RunnerExecutionArgs{Command: "hyprctl", Args: []string{"version"}})
+		_, err := r.Shell.Run(shell.RunnerExecutionArgs{Command: "hyprctl", Args: []string{"version"}})
 
 		if err != nil {
-			r.logger.Warning("❌ Hyprland health check failed", "error", err)
+			r.Logger.Warning("❌ Hyprland health check failed", "error", err)
 			return fmt.Errorf("hyprland health check failed: %w", err)
 		}
-		r.logger.Debug("Hyprland health check passed")
+		r.Logger.Debug("Hyprland health check passed")
 	}
 
 	if r.Component == "waybar" || r.Component == "all" {
 		if !r.isProcessRunning("waybar") {
-			r.logger.Warning("Waybar ➖ is not running after reload")
+			r.Logger.Warning("Waybar ➖ is not running after reload")
 			return fmt.Errorf("waybar ➖ is not running after reload")
 		}
-		r.logger.Debug("Waybar ➖ health check passed")
+		r.Logger.Debug("Waybar ➖ health check passed")
 	}
 
 	return nil

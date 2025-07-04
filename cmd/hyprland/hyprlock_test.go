@@ -64,7 +64,6 @@ func TestHyprlockCmd_getMessage(t *testing.T) {
 				t.Errorf("Expected non-empty message, got empty string")
 			}
 
-			// Test specific cases
 			if !tt.jokes && tt.message == "" && result != defaultLockMessage {
 				t.Errorf("Expected default message '%s', got '%s'", defaultLockMessage, result)
 			}
@@ -120,10 +119,8 @@ func TestHyprlockCmd_fetchJokes(t *testing.T) {
 	hyprlockCmd.SetupContext(&cmd.Context{Debug: false})
 
 	t.Run("Valid provider", func(t *testing.T) {
-		// This might fail in test environment, but should handle gracefully
 		result, err := hyprlockCmd.fetchJokes("icanhazdadjoke")
 		if err != nil {
-			// Expected in test environment without internet
 			t.Logf("Failed to fetch jokes (expected in test environment): %v", err)
 			if !strings.Contains(err.Error(), "failed to fetch joke after 3 attempts") {
 				t.Errorf("Unexpected error format: %v", err)
@@ -144,11 +141,9 @@ func TestHyprlockCmd_fetchJokes(t *testing.T) {
 }
 
 func TestHyprlockCmd_Run(t *testing.T) {
-	// Create a temporary config file for testing
 	tempDir := t.TempDir()
 	configPath := filepath.Join(tempDir, "hyprlock.conf")
 
-	// Create a sample config file
 	sampleConfig := `
 background {
     monitor = 
@@ -235,9 +230,6 @@ label {
 func TestHyprlockCmd_DefaultValues(t *testing.T) {
 	hyprlockCmd := &HyprlockCmd{}
 
-	// Test default values based on struct tags
-	// Note: Go structs initialize with zero values, not struct tag defaults
-	// The struct tag defaults are used by CLI parsing libraries like kong
 	if hyprlockCmd.Dry != false {
 		t.Errorf("Expected default Dry to be false, got %v", hyprlockCmd.Dry)
 	}
@@ -250,7 +242,6 @@ func TestHyprlockCmd_DefaultValues(t *testing.T) {
 		t.Errorf("Expected default Message to be empty, got %s", hyprlockCmd.Message)
 	}
 
-	// Test that fields exist and can be set to expected defaults
 	hyprlockCmd.ConfigPath = "$HOME/.config/hypr/hyprlock.conf"
 	if hyprlockCmd.ConfigPath != "$HOME/.config/hypr/hyprlock.conf" {
 		t.Errorf("Failed to set ConfigPath to expected default value")
@@ -266,31 +257,5 @@ func TestDefaultLockMessage(t *testing.T) {
 	expected := "Powered by hyprlock 🔥"
 	if defaultLockMessage != expected {
 		t.Errorf("Expected defaultLockMessage to be '%s', got '%s'", expected, defaultLockMessage)
-	}
-}
-
-// Benchmark tests
-func BenchmarkHyprlockCmd_getProvider(b *testing.B) {
-	hyprlockCmd := &HyprlockCmd{
-		Provider: []string{"icanhazdadjoke", "reddit"},
-	}
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		hyprlockCmd.getProvider()
-	}
-}
-
-func BenchmarkHyprlockCmd_getMessage(b *testing.B) {
-	hyprlockCmd := &HyprlockCmd{
-		Jokes:    false,
-		Message:  "Test message",
-		Provider: []string{"icanhazdadjoke"},
-	}
-	hyprlockCmd.SetupContext(&cmd.Context{Debug: false})
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		hyprlockCmd.getMessage()
 	}
 }
